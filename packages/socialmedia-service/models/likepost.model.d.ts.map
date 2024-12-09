@@ -1,0 +1,1 @@
+{"version":3,"file":"likepost.model.d.ts","sourceRoot":"","sources":["../../src/models/likepost.model.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,aAAa;IAC1B,QAAQ,EAAE,MAAM,CAAC;IACjB,UAAU,EAAE,MAAM,CAAC;IACnB,MAAM,EAAE,MAAM,CAAC;IACf,YAAY,EAAE,YAAY,CAAC;CAC9B;AAED,oBAAY,YAAY;IACpB,IAAI,SAAS;IACb,KAAK,UAAU;IACf,WAAW,gBAAgB;IAC3B,IAAI,SAAS;CAChB"}

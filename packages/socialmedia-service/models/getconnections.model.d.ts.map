@@ -1,0 +1,1 @@
+{"version":3,"file":"getconnections.model.d.ts","sourceRoot":"","sources":["../../src/models/getconnections.model.ts"],"names":[],"mappings":"AACA,MAAM,WAAW,mBAAmB;IAChC,cAAc,EAAC,cAAc,CAAC;IAC9B,MAAM,EAAC,MAAM,CAAC;CACjB;AAED,oBAAY,cAAc;IACtB,QAAQ,aAAa;IACrB,OAAO,YAAY;IACnB,SAAS,cAAc;IACvB,SAAS,cAAc;IACvB,OAAO,YAAY;IACnB,GAAG,QAAQ;CACd"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"sociallogin.model.d.ts","sourceRoot":"","sources":["../../src/models/sociallogin.model.ts"],"names":[],"mappings":"AACA,MAAM,WAAW,gBAAgB;IAC7B,KAAK,EAAE,MAAM,CAAC;IACd,IAAI,EAAE,UAAU,CAAC;CACpB;AAED,MAAM,WAAW,UAAU;IACvB,KAAK,EAAE,MAAM,CAAC;IACd,GAAG,EAAE,MAAM,CAAC;CACf"}

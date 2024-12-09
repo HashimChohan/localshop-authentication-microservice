@@ -1,0 +1,1 @@
+{"version":3,"file":"signup.model.d.ts","sourceRoot":"","sources":["../../src/models/signup.model.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,WAAW;IACxB,IAAI,EAAE,IAAI,CAAA;CACb;AAED,MAAM,WAAW,IAAI;IACjB,KAAK,EAAE,MAAM,CAAC;IACd,QAAQ,EAAE,MAAM,CAAC;IACjB,QAAQ,EAAC,MAAM,CAAC;CACnB"}

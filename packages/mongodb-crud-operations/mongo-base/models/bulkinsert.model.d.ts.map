@@ -1,0 +1,1 @@
+{"version":3,"file":"bulkinsert.model.d.ts","sourceRoot":"","sources":["../../../src/mongo-base/models/bulkinsert.model.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,eAAe;IAC5B,MAAM,EAAE,MAAM,CAAC;IACf,UAAU,EAAE,MAAM,CAAC;IACnB,aAAa,EAAE,GAAG,EAAE,CAAC;CACxB"}
