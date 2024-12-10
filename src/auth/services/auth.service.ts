@@ -53,10 +53,13 @@ export class AuthService {
           return this.mongo.createApiResponse(false, {}, 'Phone Number Already Exists');
         }
       }
-      userData.password = await bcrypt.hash(
-        userData.password,
-        Constants.BCRYPT_HASH_ROUNDS,
-      );
+
+      if(userData.type!='guest'){
+        userData.password = await bcrypt.hash(
+          userData.password,
+          Constants.BCRYPT_HASH_ROUNDS,
+        );
+      }
       userData.createdOn = new Date().getTime();
       userData.createdBy = 'System';
       let id: string = new Date().getTime().toString();
@@ -67,7 +70,7 @@ export class AuthService {
         id,
         true,
       );
-      logger.info(`Add User To DB`);
+    logger.info(`Add User To DB`);
 
       delete addUserEntityLog.password;
       let token = this.createToken({ _id: id });

@@ -10,7 +10,7 @@ import { MongoClient } from 'mongodb';
       provide: 'mongoinstance',
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
-        let dbName = process.env.DATABASE_NAME ?? 'SchoolSurveillance';
+        let dbName = process.env.DATABASE_NAME ?? 'LocalShop';
         let url = process.env.MONGO_URL?? 'mongodb://host.docker.internal:27017';
         const client =  new MongoClient(url);
         const db = client.db(dbName);
