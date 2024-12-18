@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Collection, Db, SortDirection, WithId } from 'mongodb';
+import { Collection, Db, ObjectId, SortDirection, WithId } from 'mongodb';
 import { CollectionNames } from 'src/constants';
+import * as murmurhash from 'murmurhash';
 
 @Injectable()
 export class MongoService {
@@ -31,13 +32,23 @@ export class MongoService {
   }
 
   async insert<T>(collectionName: CollectionNames, data: T) {
-    data['_id'] = Date.now().toString();
-    data['createdOn'] = Date.now();
-    data['isDeleted'] = false;
+    // Generate a referenceId using murmurhash and store it in an array
+    const referenceId = murmurhash.v3(JSON.stringify(data)).toString(); // Generate hash as a string
+    const idArray = [referenceId]; // Wrap it in an array
+
+    // Add default fields to the data
+    data["createdOn"] = Date.now();
+    data["isDeleted"] = false;
+    data["id"] = idArray; // Add id as an array of strings
+
+    // Insert into the database
     const response = await this.db.collection(collectionName).insertOne(data);
-    data['_id'] = response.insertedId;
+
+    // Update _id with the generated MongoDB ObjectId
+    data["_id"] = response.insertedId;
+
     return data;
-  }
+}
 
   async bulkInsert<T>(collectionName: CollectionNames, data: T[]) {
     const bulk = this.db.collection(collectionName).initializeUnorderedBulkOp();
@@ -54,7 +65,7 @@ export class MongoService {
   async update<T>(
     collectionName: CollectionNames,
     data: T,
-    id: string,
+    id: ObjectId,
     upsert: boolean = true,
   ) {
     delete data['_id'];
@@ -82,7 +93,7 @@ export class MongoService {
     return data;
   }
 
-  async delete(collectionName: CollectionNames, id: string) {
+  async delete(collectionName: CollectionNames, id: ObjectId) {
     return await this.update(collectionName, { isDeleted: true }, id);
   }
 

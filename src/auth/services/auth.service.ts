@@ -1,7 +1,7 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { CollectionNames } from 'src/environment';
 import * as bcrypt from 'bcrypt';
-
+import * as murmurhash from 'murmurhash';
 import { UtilService } from 'src/util/util.service';
 import { v4 as uuidv4 } from 'uuid';
 import { MongoBaseService, Operation } from 'mongodb-crud-operations';
@@ -9,6 +9,7 @@ import { FirebaseService } from 'src/firebase/firebase.service';
 import { ResponseModel } from 'src/response.model';
 import { Constants } from 'src/constants';
 import { MongoService } from 'src/mongo/mongo.service';
+import { ObjectId } from 'mongodb';
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const { createWriteStream } = require('fs');
@@ -27,58 +28,72 @@ export class AuthService {
 
   public async signUp(data: any): Promise<ResponseModel> {
     try {
-      logger.info(`Sign Up Started With Data : ${JSON.stringify(data)}`);
+      logger.info(`Sign Up Started With Data: ${JSON.stringify(data)}`);
+      
       let userData: any = { ...data.user };
-      let checkQuerry: any = {}
+      let checkQuery: any = {};
+  
+      // Construct the query based on email or phone number
       if (data.user.email) {
-        checkQuerry = {
-          email: { $eq: userData.email }
-        }
+        checkQuery = { email: { $eq: userData.email } };
       } else {
-        checkQuerry = {
-          phoneNumber: { $eq: userData.phoneNumber }
-        }
+        checkQuery = { phoneNumber: { $eq: userData.phoneNumber } };
       }
-      let findUserModel: any = await this.mongo.findByQuery(
-        CollectionNames.Users, checkQuerry
-        // { email: userData.email },
 
-      );
+      userData.createdOn = Date.now();
+      userData.createdBy = 'System';
+      // Check if the user already exists
+      const findUserModel: any = await this.mongo.findByQuery(CollectionNames.Users, checkQuery);
       logger.info(`Check If User Exists`);
-
+  
       if (findUserModel.length > 0) {
-        if(data.user.email){
-          return this.mongo.createApiResponse(false, {}, 'Email Already Exists');
-        }else{
-          return this.mongo.createApiResponse(false, {}, 'Phone Number Already Exists');
-        }
+        const message = data.user.email
+          ? 'Email Already Exists'
+          : 'Phone Number Already Exists';
+        return this.mongo.createApiResponse(false, {}, message);
       }
-
-      if(userData.type!='guest'){
+  
+      // Hash the password if the user is not a guest
+      if (userData.type !== 'guest') {
         userData.password = await bcrypt.hash(
           userData.password,
           Constants.BCRYPT_HASH_ROUNDS,
         );
       }
-      userData.createdOn = new Date().getTime();
-      userData.createdBy = 'System';
-      let id: string = new Date().getTime().toString();
+  
 
-      let addUserEntityLog: any = await this.mongo.update(
+      const id = new ObjectId();
+      const referenceId = murmurhash.v3(JSON.stringify(userData)).toString(); // Generate hash as a string
+
+      // Create an array of objects with the _id field
+      const idArray = [{ _id: referenceId }];
+      
+      // Assign the array of objects to the `id` field
+      userData["id"] = idArray;
+      
+      // Insert the user into the database
+      const addUserEntityLog: any = await this.mongo.update(
         CollectionNames.Users,
         userData,
-        id,
+        id, // Pass the ObjectId as a string
         true,
       );
-    logger.info(`Add User To DB`);
-
+      logger.info(`Add User To DB`);
+  
+      // Remove sensitive data (password) from the response
       delete addUserEntityLog.password;
-      let token = this.createToken({ _id: id });
+  
+      // Generate a token for the user
+      const token = this.createToken({ _id: id });
+  
       logger.info(`Sign Up Ended.`);
-      return this.mongo.createApiResponse(true, { user: addUserEntityLog, token }, "User Created Successfully"
+      return this.mongo.createApiResponse(
+        true,
+        { user: addUserEntityLog, token },
+        'User Created Successfully',
       );
     } catch (err) {
-      logger.info(`Sign Up Ended With Error : ${err.stack}.`);
+      logger.error(`Sign Up Ended With Error: ${err.stack}`);
       return this.mongo.createApiResponse(false, {}, 'Something Went Wrong.');
     }
   }
@@ -143,13 +158,14 @@ export class AuthService {
       if (!isValidToken) {
         return this.mongo.createApiResponse(false, 'Invalid Credentials');
       }
-  let checkQuerry:any={}
-      if(data.user.email){
+  
+      let checkQuerry: any = {};
+      if (data.user.email) {
         checkQuerry = { email: data.user.email };
-      }else if(data.user.phoneNumber){
+      } else if (data.user.phoneNumber) {
         checkQuerry = { phoneNumber: data.user.phoneNumber };
       }
-      
+      data.user.createdOn = Date.now();
       const findUserModel: any = await this.mongo.findByQuery(
         CollectionNames.Users,
         checkQuerry,
@@ -159,10 +175,14 @@ export class AuthService {
       if (findUserModel.length === 0) {
         logger.info(`User not found, creating new user.`);
   
-        const userId = new Date().getTime().toString();
-        data.user.createdOn = new Date().getTime();
-        data.user.createdBy = 'System';
-  
+        const userId = new ObjectId(); // Generate ObjectId
+        const referenceId = murmurhash.v3(JSON.stringify(data)).toString(); // Generate hash as a string
+
+        // Create an array of objects with the _id field
+        const idArray = [{ _id: referenceId }];
+        
+        // Assign the array of objects to the `id` field
+        data.user["id"] = idArray;
         const userEntityLog: any = await this.mongo.update(
           CollectionNames.Users,
           data.user,
@@ -177,11 +197,11 @@ export class AuthService {
           'User Registered and Logged in Successfully',
         );
       }
-  
+     
       // If user exists, return the user details and token
       const user = { ...findUserModel[0] };
       logger.info(`User Found. Returning user details.`);
-  
+    
       return this.mongo.createApiResponse(
         true,
         { user: user, token: data.token },
@@ -191,7 +211,8 @@ export class AuthService {
       logger.error(`Phone Number Login Failed With Error: ${err.stack}`);
       return this.mongo.createApiResponse(false, 'Something Went Wrong.');
     }
-  }
+  } 
+  
   
 
 
@@ -223,7 +244,7 @@ export class AuthService {
         true,
       );
       logger.info(`Updating User In DB.`);
-      await this.mongo.update(CollectionNames.Users, userEntityLog, '');
+      // await this.mongo.update(CollectionNames.Users, userEntityLog, '');
       logger.info(`Forgot Password Ended.`);
       return this.mongo.createApiResponse(
         true,
@@ -327,7 +348,7 @@ export class AuthService {
             id,
           );
           logger.info(`Update User In DB.`);
-          await this.mongo.update(CollectionNames.Users, userEntityLog, '');
+          // await this.mongo.update(CollectionNames.Users, userEntityLog, '');
           this.createToken({ _id: id }).accessToken;
           logger.info(`Change Password Ended.`);
           return this.mongo.createApiResponse(
@@ -508,9 +529,9 @@ export class AuthService {
           'Phone Number Already Exists',
         );
       }
-      userData.createdOn = new Date().getTime();
+      userData.createdOn = Date.now()
       userData.createdBy = 'System';
-      let id: string = new Date().getTime().toString();
+      let id = new ObjectId();
       let addUserEntityLog: any = await this.mongo.update(
         CollectionNames.Users,
         userData,
@@ -645,7 +666,7 @@ export class AuthService {
       logger.info('length of users ==0 line 1');
       if (findUserModel.length === 0 || !findUserModel[0].uid) {
         var userDoc: any = {};
-        let userId = new Date().getTime().toString();
+        let userId = new ObjectId();
         if (findUserModel.length > 0) {
           userDoc = findUserModel[0];
           userId = findUserModel[0]._id;
@@ -667,16 +688,16 @@ export class AuthService {
           userId,
         );
         logger.info(`Add User To DB.`);
-        let user = await this.mongo.update(
-          CollectionNames.Users,
-          userEntityLog,
-          '',
-        );
+        // let user = await this.mongo.update(
+        //   CollectionNames.Users,
+        //   userEntityLog,
+        //   '',
+        // );
         console.log('length of users ==0 line secondLast');
         logger.info(`Social Login Ended.`);
         return this.mongo.createApiResponse(
           true,
-          { user: user, token: { accessToken: data.token } },
+          { user: userEntityLog, token: { accessToken: data.token } },
           'User Login Successfully',
         );
       } else {

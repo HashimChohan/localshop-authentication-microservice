@@ -35,6 +35,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^6.3.0",
     "mongodb-crud-operations": "^1.0.11",
+    "murmurhash": "^2.0.1",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^6.6.3",
